@@ -42,7 +42,12 @@ app.get('/api/resetdb', function (req, res) {
 app.post('/api/submitform', function (req, res) {
 	let goBackLink = " <a href=\"/\">go back</a>";
 	console.log(req.body);
-	let query = "insert into results (name, mail, age) values (\"" + req.body.name + "\", \"" + req.body.email + "\", " + req.body.age + ");";
+
+	let name = req.body.name;
+	let email = req.body.email;
+	let age = req.body.age
+
+	let query = "insert into results (name, mail, age) values (\"" + name + "\", \"" + email + "\", " + age + ");";
 
 	console.log(query);
 
@@ -50,9 +55,24 @@ app.post('/api/submitform', function (req, res) {
 	connection.query(query, function (error, results, fields) {
 		if (error) {
 			console.error(error);
-			res.send()
+			res.send("error occurred");
 		} else {
 			res.send("ok" + goBackLink);
+		}
+	});
+
+	connection.end();
+});
+
+app.get('/listdata', function(req, res) {
+	let query = "select * from results;";
+	connection.connect();
+	connection.query(query, function (error, results, fields) {
+		if (error) {
+			console.error(error);
+			res.send("error occurred");
+		} else {
+			res.send(results);
 		}
 	});
 
