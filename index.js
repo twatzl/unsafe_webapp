@@ -1,31 +1,96 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-var app = express();
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
 
-var mysql      = require('mysql');
-var connection = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'unsafe_user',
-  password : 'password',
-  database : 'unsafe_webapp_db'
-});
+const mysql = require('mysql');
+const dbConfig = {
+  host: 'localhost',
+  user: 'unsafe_user',
+  password: 'password',
+  database: 'unsafe_webapp_db',
+  multipleStatements: true
+};
 
-function resetDatabase() {
-  let q2 = "create table results (name VARCHAR(255), mail VARCHAR(255), age INT);"
+class Connection {
+  constructor (conn) {
+    this.connection = conn;
+  }
 
-	connection.connect(function (error) {
-    connection.query("drop table IF EXISTS results;",
-			function (error, results, fields) {
-      if (error) { console.error(error); }
+  release () {
+    this.connection.release();
+    this.connection = null;
+  }
+
+  query (sql, args) {
+    return new Promise((resolve, reject) => {
+      this.connection.query(sql, args, (err, rows, info) => {
+        if (err) {
+          return reject(err);
+        }
+
+        resolve([rows, info]);
+      })
+    })
+  }
+}
+
+class Database {
+  constructor (config) {
+    this.pool = mysql.createPool(config);
+  }
+
+  getConnection () {
+    return new Promise((resolve, reject) => {
+      this.pool.getConnection((err, connection) => {
+        if (err) {
+          return reject(err);
+        }
+
+        resolve(new Connection(connection))
+      })
+    })
+  }
+
+  query (sql, args) {
+    return new Promise((resolve, reject) => {
+      this.pool.query(sql, args, (err, rows, info) => {
+        if (err)
+          return reject(err);
+        resolve([rows, info]);
+      });
     });
-    connection.query(q2, function (error, results, fields) {
-      if (error) { console.error(error); }
-    });
-	});
+  }
+
+  close () {
+    return new Promise((resolve, reject) => {
+      this.pool.end(err => {
+        if (err)
+          return reject(err);
+        resolve();
+      })
+    })
+  }
+}
+
+let db = new Database(dbConfig);
+
+async function resetDatabase () {
+  try {
+    const connection = await db.getConnection();
+
+    await connection.query("drop table IF EXISTS results;");
+    await connection.query("create table results (name VARCHAR(255), mail VARCHAR(255), age INT);");
+    await connection.query("drop table IF EXISTS users;");
+    await connection.query("create table users (name VARCHAR(255), password VARCHAR(255), admin INT);");
+
+    connection.release();
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 // parse application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.urlencoded({extended: false}));
 
 app.use(express.static("static"));
 
@@ -34,45 +99,53 @@ app.get('/api/getdata', function (req, res) {
 });
 
 app.get('/api/resetdb', function (req, res) {
-  resetDatabase();
-  res.send("Database cleaned.");
+  resetDatabase()
+    .finally(() => res.send("Database cleaned."));
 });
 
-app.post('/api/submitform', function (req, res) {
-	let goBackLink = " <a href=\"/\">go back</a>";
-	console.log(req.body);
+app.post('/api/submitform', async function (req, res) {
+  let goBackLink = " <a href=\"/\">go back</a>";
+  console.log(req.body);
 
-	let name = req.body.name;
-	let email = req.body.email;
-	let age = req.body.age
+  let name = req.body.name;
+  let email = req.body.email;
+  let age = req.body.age;
 
-	let query = "insert into results (name, mail, age) values (\"" + name + "\", \"" + email + "\", " + age + ");";
+  let q = "insert into results (name, mail, age) values (\"" + name + "\", \"" + email + "\", " + age + ");";
 
-	console.log(query);
+  console.log(q);
 
-	connection.query(query, function (error, results, fields) {
-		if (error) {
-			console.error(error);
-			res.send("error occurred");
-		} else {
-			res.send("ok" + goBackLink);
-		}
-	});
+  try {
+    await db.query(q);
+
+    res.send("ok" + goBackLink);
+  } catch (e) {
+    console.error(e);
+    res.send("error occurred");
+  }
 });
 
-app.get('/listdata', function(req, res) {
-	let query = "select * from results;";
-	connection.query(query, function (error, results, fields) {
-		if (error) {
-			console.error(error);
-			res.send("error occurred");
-		} else {
-			res.send(results);
-		}
-	});
+app.get('/listdata', async function (req, res) {
+  let q = "select * from results;";
+  try {
+    const results = await db.query(q);
+    res.send(results);
+  } catch (error) {
+    console.error(error);
+    res.send("error occurred");
+  }
 });
 
-app.listen(3000, function () {
+const server = app.listen(3000, function () {
   console.log('Web server listening on port 3000!');
 });
+
+server.on('close', async () => {
+  try {
+    await db.close()
+  } catch (error) {
+    console.error('failed to close DB pool');
+    console.error(error);
+  }
+})
 
