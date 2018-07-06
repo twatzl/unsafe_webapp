@@ -1,0 +1,38 @@
+<html>
+
+	<head>
+		<script>
+			function calculateAge(form) {
+				let yearOfBirth = form.yearOfBirth.value;
+				let currentYear = (new Date()).getFullYear();
+				let expr = currentYear + " - " + yearOfBirth;
+
+				form.age.value = eval(expr);
+			}
+		</script>
+
+	</head>
+
+	<body>
+		<div>
+			<h3>Enter your personal data!</h3>
+			<form action='api/submitform' method='post'>
+				<label>Name: </label><input name='name'>
+				<label>Mail: </label><input name='mail' type='email'>
+				<label>Age: </label><input name='age' type='number'>
+				<button type="submit">Submit</button>
+			</form>
+		</div>
+
+		<div>
+			<h3>Calculate your age!</h3>
+			<form>
+				<label>Year of birth: </label><input name="yearOfBirth" type="text">
+				<button type="button" onclick="calculateAge(this.form);">Calculate</button>
+				<input name="age" type="number" readonly="true">
+			</form>
+		</div>
+		<a href='listdata'>show entered data</a>
+	</body>
+
+</html>
