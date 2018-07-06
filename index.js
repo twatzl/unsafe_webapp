@@ -128,7 +128,7 @@ app.post('/api/submitform', async function (req, res) {
 app.get('/listdata', async function (req, res) {
   let q = "select * from results;";
   try {
-    const results = await db.query(q);
+    const [results] = await db.query(q);
     res.send(results);
   } catch (error) {
     console.error(error);
