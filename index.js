@@ -98,9 +98,9 @@ app.get('/api/getdata', function (req, res) {
   res.send('Hello World!');
 });
 
-app.get('/api/resetdb', function (req, res) {
-  resetDatabase()
-    .finally(() => res.send("Database cleaned."));
+app.get('/api/resetdb', async function (req, res) {
+  await resetDatabase()
+  res.send("Database cleaned.");
 });
 
 app.post('/api/submitform', async function (req, res) {
