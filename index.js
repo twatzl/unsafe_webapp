@@ -11,18 +11,17 @@ var connection = mysql.createConnection({
 });
 
 function resetDatabase() {
-	let q1 = "drop table IF EXISTS results;";
-	let q2 = "create table results (name VARCHAR(255), mail VARCHAR(255), age INT);"
+  let q2 = "create table results (name VARCHAR(255), mail VARCHAR(255), age INT);"
 
-	connection.connect();
-	connection.query(q1, function (error, results, fields) {
-		if (error) { console.error(error); }
+	connection.connect(function (error) {
+    connection.query("drop table IF EXISTS results;",
+			function (error, results, fields) {
+      if (error) { console.error(error); }
+    });
+    connection.query(q2, function (error, results, fields) {
+      if (error) { console.error(error); }
+    });
 	});
-	connection.query(q2, function (error, results, fields) {
-		if (error) { console.error(error); }
-	});
-
-	connection.end();
 }
 
 // parse application/x-www-form-urlencoded
@@ -51,7 +50,6 @@ app.post('/api/submitform', function (req, res) {
 
 	console.log(query);
 
-	connection.connect();
 	connection.query(query, function (error, results, fields) {
 		if (error) {
 			console.error(error);
@@ -60,13 +58,10 @@ app.post('/api/submitform', function (req, res) {
 			res.send("ok" + goBackLink);
 		}
 	});
-
-	connection.end();
 });
 
 app.get('/listdata', function(req, res) {
 	let query = "select * from results;";
-	connection.connect();
 	connection.query(query, function (error, results, fields) {
 		if (error) {
 			console.error(error);
@@ -75,8 +70,6 @@ app.get('/listdata', function(req, res) {
 			res.send(results);
 		}
 	});
-
-	connection.end();
 });
 
 app.listen(3000, function () {
