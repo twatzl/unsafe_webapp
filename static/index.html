@@ -1,38 +1,91 @@
+<!DOCTYPE html>
 <html>
+<head>
+    <script>
+      function calculateAge (form) {
+        let yearOfBirth = form.yearOfBirth.value;
+        let currentYear = (new Date()).getFullYear();
+        let expr = currentYear + " - " + yearOfBirth;
 
-	<head>
-		<script>
-			function calculateAge(form) {
-				let yearOfBirth = form.yearOfBirth.value;
-				let currentYear = (new Date()).getFullYear();
-				let expr = currentYear + " - " + yearOfBirth;
+        form.age.value = eval(expr);
+      }
+    </script>
 
-				form.age.value = eval(expr);
-			}
-		</script>
+    <script src="jquery.min.js"></script>
+    <title>Not so secure</title>
+</head>
 
-	</head>
+<body>
 
-	<body>
-		<div>
-			<h3>Enter your personal data!</h3>
-			<form action='api/submitform' method='post'>
-				<label>Name: </label><input name='name'>
-				<label>Mail: </label><input name='mail' type='email'>
-				<label>Age: </label><input name='age' type='number'>
-				<button type="submit">Submit</button>
-			</form>
-		</div>
+<div class="loginInput">
+    <form id="login">
+        <label>User: </label><input class="user" name="user">
+        <label>Password: </label><input class="pw" name="pw" type="password">
+        <button type="submit" class="login">Login</button>
+    </form>
+    <a href="createAccount.html">Create new account</a>
+</div>
 
-		<div>
-			<h3>Calculate your age!</h3>
-			<form>
-				<label>Year of birth: </label><input name="yearOfBirth" type="text">
-				<button type="button" onclick="calculateAge(this.form);">Calculate</button>
-				<input name="age" type="number" readonly="true">
-			</form>
-		</div>
-		<a href='listdata'>show entered data</a>
-	</body>
+<div>
+    <h3>Enter your personal data!</h3>
+    <form action='api/submitform' method='post'>
+        <label>Name: </label><input name='name'>
+        <label>Mail: </label><input name='mail' type='email'>
+        <label>Age: </label><input name='age' type='number'>
+        <button type="submit">Submit</button>
+    </form>
+</div>
 
+<div>
+    <h3>Calculate your age!</h3>
+    <form>
+        <label>Year of birth: </label><input name="yearOfBirth" type="text">
+        <button type="button" onclick="calculateAge(this.form);">Calculate</button>
+        <input name="age" type="number" readonly="true">
+    </form>
+</div>
+
+
+<div>
+    <h3>Add friend</h3>
+    <form id="addFriend">
+        <label>Friends user name: </label><input name="friendName">
+        <button type="submit">Add</button>
+        <div class="info"></div>
+    </form>
+</div>
+
+<h3>Friend List</h3>
+<button id="loadFriends">Show Friends</button>
+<table id="friendList">
+    <thead>
+    <tr>
+        <th>name</th>
+        <th>mail</th>
+        <th>age</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+
+<h3>Forum</h3>
+<div id="forum">
+
+</div>
+
+<div id="forumPost">
+    <textarea id="newMsg" rows="10" cols="80">Your message...</textarea>
+    <div>
+        <button id="postMsg">Post</button>
+    </div>
+</div>
+
+
+
+<script src="usClient.js"></script>
+
+<a href='listdata'>show entered data</a>
+
+</body>
 </html>

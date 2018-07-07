@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="jquery.min.js"></script>
+    <title>create account</title>
+</head>
+
+<body>
+<div>
+    <h3>Enter your personal data!</h3>
+    <form action='api/createAccount' method='post'>
+        <label>Name: </label><input name='name'>
+        <label>Mail: </label><input name='mail' type='email'>
+        <label>Age: </label><input name='age' type='number'>
+        <label>User name: </label><input name="userName">
+        <label>Password: </label><input name="password" type="password">
+        <label>Repeat password: </label><input name="passwordRepeat" type="password">
+        <button type="submit">Submit</button>
+    </form>
+    <p>
+        <a href="index.html">Go back</a>
+    </p>
+</div>
+</body>
+</html>
