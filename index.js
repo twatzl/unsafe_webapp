@@ -418,6 +418,7 @@ app.get('/api/messages', async function (req, res) {
 
 if (process.argv.includes('--resetDB')) {
   resetDatabase();
+  process.exit(0);
 } else {
   const server = app.listen(3000, function () {
     console.log('Web server listening on port 3000 with document root ' + baseDir);
