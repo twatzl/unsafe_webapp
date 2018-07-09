@@ -250,7 +250,7 @@ app.post('/api/submitform', async function (req, res) {
   let email = req.body.mail;
   let age = req.body.age;
 
-  let q = 'insert into person (name, mail, age) values ("' + name + '", "' + email + '", ' + age + ');';
+  let q = 'insert into person (name, mail, age) values (\'' + name + '\', \'' + email + '\', ' + age + ');';
 
   console.log(q);
 
