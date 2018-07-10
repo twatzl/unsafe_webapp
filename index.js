@@ -250,6 +250,7 @@ app.post('/api/submitform', async function (req, res) {
   let email = req.body.mail;
   let age = req.body.age;
 
+  // SQL Injection #1
   let q = 'insert into person (name, mail, age) values (\'' + name + '\', \'' + email + '\', ' + age + ');';
 
   console.log(q);
@@ -267,6 +268,7 @@ app.post('/api/submitform', async function (req, res) {
 app.get('/api/getFriends/:ownId', jsonParser, async function (req, res) {
   const ownId = req.params.ownId;
 
+  // SQL Injection #2
   const [values] = await db.query('select p.id, p.name, p.mail, p.age from person as p, friends as f ' +
     'where (f.p1=' + ownId +
     ' and f.p2=p.id)' +
@@ -350,6 +352,7 @@ app.get('/tabledata/:tablename', async function (req, res) {
   try {
     const conn = await db.getConnection();
     // I don't think prepared statements can do dynamic table select
+    // SQL Injection 3
     const query = 'select * from '+ tablename + ';';
     console.log(query);
     const result = await conn.query(query);
@@ -413,6 +416,7 @@ app.post('/api/addMessage', async function (req, res) {
     console.info('Adding forum post');
     console.info(req);
 
+    // XSS #1 pt.1
     let [{insertId: msgId}] = await db.query('insert into forum (username, message) values (?, ?)', [user, text]);
 
     let [[newEntry]] = await db.query('select * from forum where id = ?', [msgId]);
@@ -427,6 +431,7 @@ app.post('/api/addMessage', async function (req, res) {
 
 app.get('/api/messages', async function (req, res) {
   try {
+    // XSS #1 pt.2
     let [messages] = await db.query('select * from forum order by ts ASC');
     res.json(messages);
   } catch (e) {
