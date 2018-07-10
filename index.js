@@ -339,6 +339,28 @@ app.get('/listdata', async function (req, res) {
   }
 });
 
+app.get('/tabledata/:tablename', async function (req, res) {
+  const tablename = req.params.tablename;
+  if (!tablename) {
+    res.send(400);
+    return;
+  }
+
+
+  try {
+    const conn = await db.getConnection();
+    // I don't think prepared statements can do dynamic table select
+    const query = 'select * from '+ tablename + ';';
+    console.log(query);
+    const result = await conn.query(query);
+    conn.release();
+    res.json(result[0]);
+  } catch (error) {
+    console.error(error);
+    res.send(500, "error occurred");
+  }
+});
+
 app.post('/api/createAccount', async function (req, res) {
   const form = req.body;
 
