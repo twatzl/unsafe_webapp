@@ -162,9 +162,11 @@ async function resetDatabase () {
       ');');
 
 
-    connection.release();
+    await connection.release();
+    process.exit(0);
   } catch (error) {
     console.error(error);
+    process.exit(0);
   }
 }
 
@@ -444,8 +446,8 @@ app.get('/api/messages', async function (req, res) {
 
 
 if (process.argv.includes('--resetDB')) {
+  console.log("cleaning database");
   resetDatabase();
-  process.exit(0);
 } else {
   const server = app.listen(3000, function () {
     console.log('Web server listening on port 3000 with document root ' + baseDir);
