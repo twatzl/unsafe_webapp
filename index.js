@@ -63,6 +63,7 @@ class Connection {
   query (sql, args) {
     return new Promise((resolve, reject) => {
       this.connection.query(sql, args, (err, rows, info) => {
+        console.info(sql);
         if (err) {
           return reject(err);
         }
@@ -85,6 +86,7 @@ class Database {
           return reject(err);
         }
 
+        console.info("Opened connection");
         resolve(new Connection(connection))
       })
     })
