@@ -13,6 +13,7 @@ const escapeHtml = require('escape-html');
 const bcrypt = require('bcrypt');
 const uuidv4 = require('uuid/v4');
 const fs = require('fs');
+const Memorystore = require('memorystore')(session);
 
 const dbConfig = {
   host: 'localhost',
@@ -70,7 +71,7 @@ class Connection {
   query (sql, args) {
     return new Promise((resolve, reject) => {
       this.connection.query(sql, args, (err, rows, info) => {
-        console.info(sql);
+        //console.info(sql);
         if (err) {
           return reject(err);
         }
@@ -93,7 +94,6 @@ class Database {
           return reject(err);
         }
 
-        console.info("Opened connection");
         resolve(new Connection(connection))
       })
     })
@@ -198,7 +198,12 @@ app.use(session({
   secret: 'ourReallyNotSoUnsafeApp', // We now have our own secret
   resave: true,
   saveUninitialized: true,
-  cookie: {httpOnly: true, secure: secure}
+  cookie: {httpOnly: true, secure: secure},
+  store: new Memorystore({
+    checkPeriod: 1200000,
+    ttl: 3600000,
+    max: 1024*1024*5
+  })
 }));
 
 // parse application/x-www-form-urlencoded
@@ -313,7 +318,7 @@ const login = async function login (req, res) {
       return;
     }
 
-    console.log(result);
+    console.log(user);
     // noinspection JSUnresolvedVariable
     const authInfo = {
       id: user.personId,
@@ -353,7 +358,7 @@ app.post('/api/resetdb', requireAdmin, checkCSRFHeader, async function (req, res
 
 app.post('/api/submitform', requireAuth, checkCSRFForm, async function (req, res) {
   let goBackLink = '<a href="' + baseDir + '">go back</a>';
-  console.log(req.body);
+  //console.log(req.body);
 
   let name = req.body.name;
   let email = req.body.mail;
@@ -530,8 +535,6 @@ app.post('/api/createAccount', checkCSRFForm, async function (req, res) {
 });
 
 app.get('/api/ownInfo', function (req, res) {
-  console.info('ownInfo:');
-  console.info(req.session);
   if (req.session && req.session.authInfo) {
     res.json(req.session.authInfo)
   } else {
@@ -551,8 +554,7 @@ app.post('/api/addMessage', requireAuth, checkCSRFHeader, async function (req, r
 
     text = escapeHtml(text);
 
-    console.info('Adding forum post');
-    console.info(req);
+    console.info('Adding forum post: ' + text);
 
     // XSS #1 pt.1
     let [{insertId: msgId}] = await db.query('insert into forum (username, message) values (?, ?)', [user, text]);
@@ -589,8 +591,8 @@ app.post('/api/createAdmin', requireAdmin, checkCSRFForm, async function (req, r
     try {
       conn = await db.getConnection();
       await conn.beginTransaction();
+      console.info('Making user ' + userName + ' admin');
       const [result] = await db.query('update user set admin=1 where username=?;', [userName]);
-      console.info(result);
       if (result.affectedRows !== 1) {
         await conn.rollback();
         res.status(400).send('Unknown user');
