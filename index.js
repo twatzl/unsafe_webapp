@@ -174,11 +174,13 @@ async function resetDatabase () {
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 app.use(session({
   secret: 'keyboard cat', // intentionally leave original secret
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false, httpOnly: false}
+  cookie: { secure: true, httpOnly: true}
 }));
 
 // parse application/x-www-form-urlencoded
