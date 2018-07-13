@@ -184,7 +184,7 @@ app.use(session({
   secret: 'ourReallyNotSoUnsafeApp', // intentionally leave original secret
   resave: false,
   saveUninitialized: true,
-  cookie: {secure: true, httpOnly: true, sameSite: true, path: baseDir}
+  cookie: {secure: true, httpOnly: true, sameSite: true}
 }));
 
 // parse application/x-www-form-urlencoded
