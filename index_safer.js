@@ -6,6 +6,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const mysql = require('mysql');
+const escapeHtml = require('escape-html');
+
 const dbConfig = {
   host: 'localhost',
   user: 'unsafe_user',
@@ -116,12 +118,13 @@ class Database {
 let db = new Database(dbConfig);
 
 
-function checkAuthenticated (req, res) {
-  if (!req.session.authInfo) {
-    res.status(401).send('Permission denied');
-    return false;
-  }
+function checkAuthenticated (req, res, admin) {
+  if (req.session && req.session.authInfo && (!admin || req.session.authInfo.isAdmin)) {
   return true;
+} else {
+  res.status(401).send('Permission denied');
+  return false;
+}
 }
 
 
@@ -165,6 +168,7 @@ async function resetDatabase () {
 
 
     await connection.release();
+
     process.exit(0);
   } catch (error) {
     console.error(error);
@@ -174,11 +178,13 @@ async function resetDatabase () {
 
 const app = express();
 
+app.set('trust proxy', 1);
 app.use(session({
-  secret: 'keyboard cat', // intentionally leave original secret
+  name: 'safer',
+  secret: 'ourReallyNotSoUnsafeApp', // intentionally leave original secret
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false, httpOnly: false}
+  cookie: {secure: true, httpOnly: true, sameSite: true, path: baseDir}
 }));
 
 // parse application/x-www-form-urlencoded
@@ -188,10 +194,22 @@ app.use(jsonParser);
 
 app.use(express.static("static"));
 
+function isPersonId(input) {
+  if (/([1-9][0-9]*)|0/.test(input)) {
+    const x = Number(input);
+    return x >= 0 && x <= 0x7FFFFFFF;
+  } return false;
+}
 
-async function login (req, res) {
+
+const login = async function login (req, res) {
   let userName = req.body.user;
   let pw = req.body.pw;
+
+  if (!userName) {
+    res.sendStatus(400);
+    return;
+  }
 
   // we store our passwords unsalted and unhashed as god has intended it.
   try {
@@ -225,9 +243,9 @@ async function login (req, res) {
     res.json(authInfo);
   } catch (e) {
     console.error(e);
-    res.status(500).json(e);
+    res.sendStatus(500);
   }
-}
+};
 
 app.post('/api/login', login);
 
@@ -236,17 +254,20 @@ app.get('/api/getdata', function (req, res) {
 });
 
 app.get('/api/resetdb', async function (req, res) {
-  if (checkAuthenticated(req, res) && req.session.authInfo.isAdmin) {
+  if (checkAuthenticated(req, res, true)) {
     try {
       await resetDatabase();
       res.send("Database cleaned.");
     } catch (e) {
-      res.status(500).send(e);
+      console.error(e);
+      res.sendStatus(500);
     }
   }
 });
 
 app.post('/api/submitform', async function (req, res) {
+  if (!checkAuthenticated(req, res)) return;
+
   let goBackLink = '<a href="' + baseDir + '">go back</a>';
   console.log(req.body);
 
@@ -254,30 +275,33 @@ app.post('/api/submitform', async function (req, res) {
   let email = req.body.mail;
   let age = req.body.age;
 
-  // SQL Injection #1
-  let q = 'insert into person (name, mail, age) values (\'' + name + '\', \'' + email + '\', ' + age + ');';
 
-  console.log(q);
+
+  // Fixed SQL Injection #1
 
   try {
-    await db.query(q);
+    await db.query('insert into person (name, mail, age) values (?, ?, ?);', [name, email, age]);
 
     res.send('ok ' + goBackLink);
   } catch (e) {
     console.error(e);
-    res.status(500).json(e);
+    res.sendStatus(400);
   }
 });
 
 app.get('/api/getFriends/:ownId', jsonParser, async function (req, res) {
+  if (!checkAuthenticated(req, res)) return;
+
   const ownId = req.params.ownId;
+  if (!isPesonId(ownId)) {
+    res.sendStatus(400);
+    return;
+  }
 
   // SQL Injection #2
   const [values] = await db.query('select p.id, p.name, p.mail, p.age from person as p, friends as f ' +
-    'where (f.p1=' + ownId +
-    ' and f.p2=p.id)' +
-    ' or (f.p2=' + ownId +
-    ' and f.p1=p.id)');
+    'where (f.p1=? and f.p2=p.id)' +
+    ' or (f.p2=? and f.p1=p.id)', [ownId, ownId]);
 
   res.json(values);
 });
@@ -286,8 +310,14 @@ async function countFriends (id) {
   return db.query('select count(*) from friends where p1=? or p2=?;', [id, id]);
 }
 
+
 app.get('/api/countFriends/:id', jsonParser, async function (req, res) {
+  if (!checkAuthenticated(req, res)) return;
   const id = req.params.id;
+  if (!isPersonId(id)) {
+    res.sendStatus(400);
+    return;
+  }
   try {
     const [count] = await countFriends(id);
 
@@ -317,6 +347,11 @@ app.get('/api/addFriend', async function (req, res) {
         res.status(500).send('Unknown user');
         return;
       }
+    } else {
+      if (!isPersonId(otherId)) {
+        res.sendStatus(400);
+        return;
+      }
     }
     const [[existCount]] = await conn.query('select count(*) from friends where (p1=? and p2=?) or (p2=? and p1=?);', [ownId, otherId, ownId, otherId]);
     if (existCount['count(*)'] === 0) {
@@ -335,6 +370,8 @@ app.get('/api/addFriend', async function (req, res) {
 });
 
 app.get('/listdata', async function (req, res) {
+  if (!checkAuthenticated(req, res, true)) return;
+
   let q = "select * from person;";
   try {
     const [results] = await db.query(q);
@@ -346,6 +383,7 @@ app.get('/listdata', async function (req, res) {
 });
 
 app.get('/tabledata/:tablename', async function (req, res) {
+  if (!checkAuthenticated(req, res, true)) return;
   const tablename = req.params.tablename;
   if (!tablename) {
     res.send(400);
@@ -357,9 +395,7 @@ app.get('/tabledata/:tablename', async function (req, res) {
     const conn = await db.getConnection();
     // I don't think prepared statements can do dynamic table select
     // SQL Injection 3
-    const query = 'select * from '+ tablename + ';';
-    console.log(query);
-    const result = await conn.query(query);
+    const result = await conn.query('select * from ??;', [tablename]);
     conn.release();
     res.json(result[0]);
   } catch (error) {
@@ -386,7 +422,7 @@ app.post('/api/createAccount', async function (req, res) {
       await con.query('insert into user (username, password, admin, personId) values (?, ?, ?, ?);', [form.userName, form.password, 0, personId]);
     } catch (error) {
       await con.rollback();
-      res.status(500).send(error);
+      res.status(400).send(error);
       return
     }
 
@@ -415,7 +451,14 @@ app.post('/api/addMessage', async function (req, res) {
   if (!checkAuthenticated(req, res)) return;
   try {
     const user = req.session.authInfo.userName;
-    const text = req.body.message;
+    let text = req.body.message;
+
+    if (!test) {
+      res.sendStatus(400);
+      return;
+    }
+
+    text = escapeHtml(text);
 
     console.info('Adding forum post');
     console.info(req);
@@ -444,7 +487,6 @@ app.get('/api/messages', async function (req, res) {
     res.status(500).json(e);
   }
 });
-
 
 
 if (process.argv.includes('--resetDB')) {
