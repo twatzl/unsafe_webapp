@@ -272,14 +272,19 @@ app.post('/api/submitform', async function (req, res) {
 app.get('/api/getFriends/:ownId', jsonParser, async function (req, res) {
   const ownId = req.params.ownId;
 
-  // SQL Injection #2
-  const [values] = await db.query('select p.id, p.name, p.mail, p.age from person as p, friends as f ' +
-    'where (f.p1=' + ownId +
-    ' and f.p2=p.id)' +
-    ' or (f.p2=' + ownId +
-    ' and f.p1=p.id)');
+  try {
+    // SQL Injection #2
+    const [values] = await db.query('select p.id, p.name, p.mail, p.age from person as p, friends as f ' +
+      'where (f.p1=' + ownId +
+      ' and f.p2=p.id)' +
+      ' or (f.p2=' + ownId +
+      ' and f.p1=p.id)');
 
-  res.json(values);
+    res.json(values);
+  } catch (e) {
+    // do not send exception, make it a bit harder to find
+    res.status(500).send("error occurred");
+  }
 });
 
 async function countFriends (id) {
@@ -293,7 +298,7 @@ app.get('/api/countFriends/:id', jsonParser, async function (req, res) {
 
     res.json(count['count(*)']);
   } catch (e) {
-    res.error(500).json(e)
+    res.status(500).json(e)
   }
 });
 
