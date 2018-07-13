@@ -9,6 +9,7 @@
 <div>
     <h3>Enter your personal data!</h3>
     <form action='api/createAccount' method='post'>
+        <input type="hidden" class="_csrf" name="_csrf" value="{{csrfToken}}">
         <label>Name: </label><input name='name'>
         <label>Mail: </label><input name='mail' type='email'>
         <label>Age: </label><input name='age' type='number'>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="csrf-token" content="{{csrfToken}}">
+    <link rel="stylesheet" href="main.css">
+    <script src="jquery.min.js"></script>
+    <title>Not so secure</title>
+</head>
+
+<body>
+
+<div class="loginInput">
+    <form id="login" action="api/login" method="post">
+        <input type="hidden" name="_csrf" class="_csrf" value="{{csrfToken}}">
+        <label>User: </label><input class="user" name="user">
+        <label>Password: </label><input class="pw" name="pw" type="password">
+        <button type="submit" class="login">Login</button>
+    </form>
+    <a href="createAccount.html">Create new account</a>
+</div>
+
+<div class="forAuth">
+    <h3>Enter your personal data!</h3>
+    <form action='api/submitform' method='post'>
+        <input type="hidden" name="_csrf" class="_csrf" value="{{csrfToken}}">
+        <label>Name: </label><input name='name'>
+        <label>Mail: </label><input name='mail' type='email'>
+        <label>Age: </label><input name='age' type='number'>
+        <button type="submit">Submit</button>
+    </form>
+</div>
+
+<div class="forAuth">
+    <h3>Add friend</h3>
+    <form id="addFriend">
+        <label>Friends user name: </label><input name="friendName">
+        <button type="submit">Add</button>
+        <div class="info"></div>
+    </form>
+
+
+    <h3>Friend List</h3>
+    <button id="loadOwnFriends">Show Friends</button>
+    <table id="ownFriendList">
+        <thead>
+        <tr>
+            <th>name</th>
+            <th>mail</th>
+            <th>age</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<h3>Forum</h3>
+<div id="forum">
+
+</div>
+
+<div id="forumPost" class="forAuth">
+    <textarea id="newMsg" rows="10" cols="80">Your message...</textarea>
+    <div>
+        <button id="postMsg">Post</button>
+    </div>
+</div>
+
+
+<div>
+    <h3>Calculate your age!</h3>
+    <form>
+        <label>Year of birth: </label><input name="yearOfBirth" type="text">
+        <button type="button" onclick="calculateAge(this.form);">Calculate</button>
+        <input name="age" type="number" readonly="true">
+    </form>
+</div>
+
+
+<div id="adminArea">
+    <h3>Admin area</h3>
+    <p>
+    <form id="createAdmin" action="api/createAdmin" method="post">
+        <div>
+            <label>User name of new admin:</label><input type="text" name="userName">
+            <input type="hidden" name="_csrf" class="_csrf" value="{{csrfToken}}">
+            <button class="submit">Set user as admin</button>
+        </div>
+    </form>
+    </p>
+
+    <input id="personIdForLoadFriends" type="number">
+    <button id="loadFriends">Show Friends</button>
+    <table id="friendList">
+        <thead>
+        <tr>
+            <th>name</th>
+            <th>mail</th>
+            <th>age</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <a href='listdata'>show entered data</a>
+</div>
+
+
+<script src="usClient.js"></script>
+
+</body>
+</html>
