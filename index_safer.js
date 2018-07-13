@@ -453,7 +453,7 @@ app.post('/api/addMessage', async function (req, res) {
     const user = req.session.authInfo.userName;
     let text = req.body.message;
 
-    if (!test) {
+    if (!text) {
       res.sendStatus(400);
       return;
     }
