@@ -181,10 +181,10 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(session({
   name: 'safer',
-  secret: 'ourReallyNotSoUnsafeApp', // intentionally leave original secret
+  secret: 'ourReallyNotSoUnsafeApp', // We now have our own secret
   resave: false,
   saveUninitialized: true,
-  cookie: {secure: true, httpOnly: true, sameSite: true}
+  cookie: {httpOnly: true}
 }));
 
 // parse application/x-www-form-urlencoded
