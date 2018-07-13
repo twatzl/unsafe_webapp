@@ -293,7 +293,7 @@ app.get('/api/getFriends/:ownId', jsonParser, async function (req, res) {
   if (!checkAuthenticated(req, res)) return;
 
   const ownId = req.params.ownId;
-  if (!isPesonId(ownId)) {
+  if (!isPersonId(ownId)) {
     res.sendStatus(400);
     return;
   }
