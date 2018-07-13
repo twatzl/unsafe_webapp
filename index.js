@@ -357,19 +357,22 @@ app.get('/tabledata/:tablename', async function (req, res) {
     return;
   }
 
-
+  let conn = null;
   try {
-    const conn = await db.getConnection();
+    conn = await db.getConnection();
     // I don't think prepared statements can do dynamic table select
     // SQL Injection 3
     const query = 'select * from '+ tablename + ';';
     console.log(query);
     const result = await conn.query(query);
-    conn.release();
+    console.log("query ok");
     res.json(result[0]);
   } catch (error) {
     console.error(error);
-    res.send(500, "error occurred");
+    //console.log("error");
+    res.status(500).send("error occurred");
+  } finally {
+    conn.release();
   }
 });
 
