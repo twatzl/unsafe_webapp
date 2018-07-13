@@ -11,7 +11,7 @@ const session = require('express-session');
 const mysql = require('mysql');
 const escapeHtml = require('escape-html');
 const bcrypt = require('bcrypt');
-const uuidv4 = require('uuid/v4')
+const uuidv4 = require('uuid/v4');
 const fs = require('fs');
 
 const dbConfig = {
@@ -196,7 +196,7 @@ app.set('trust proxy', 1);
 app.use(session({
   name: 'safer',
   secret: 'ourReallyNotSoUnsafeApp', // We now have our own secret
-  resave: false,
+  resave: true,
   saveUninitialized: true,
   cookie: {httpOnly: true, secure: secure}
 }));
@@ -258,6 +258,7 @@ function isPersonId (input) {
 const renderHtml = function renderIndexHtml (path, req, res) {
   if (!req.session.csrfToken) {
     req.session.csrfToken = uuidv4();
+    console.info('created csrfToken ' + req.session.csrfToken);
   }
   fs.readFile(path, function (err, content) {
     if (err) {
