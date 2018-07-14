@@ -1,6 +1,7 @@
 'use strict';
 
 const secure = !process.argv.includes('--debug');
+const enableCsrfCheck = !process.argv.includes('--allowCSRF');
 
 const baseDir = process.argv.length >= 3 ? process.argv[2] : '/';
 const saltRounds = 8;
@@ -189,7 +190,6 @@ function htmlHeaders (res, path) {
 }
 
 
-
 const app = express();
 
 app.set('trust proxy', 1);
@@ -202,7 +202,7 @@ app.use(session({
   store: new Memorystore({
     checkPeriod: 1200000,
     ttl: 3600000,
-    max: 1024*1024*5
+    max: 1024 * 1024 * 5
   })
 }));
 
@@ -215,40 +215,45 @@ app.use(express.static("static", {
   setHeaders: htmlHeaders
 }));
 
-function requireAuth(req, res, next) {
+function requireAuth (req, res, next) {
   if (!checkAuthenticated(req, res)) return;
   next()
 }
 
-function requireAdmin(req, res, next) {
+function requireAdmin (req, res, next) {
   if (!checkAuthenticated(req, res, true)) return;
   next();
 }
 
-function checkCSRF(getValue, req, res, next) {
+function checkCSRF (getValue, req, res, next) {
   if (!req.session) {
     res.sendStatus(401);
     return;
   }
-  let token = req.session.csrfToken;
-  if (!token) {
-    console.error('token not initialized!!');
-    res.sendStatus(500);
-    return;
-  }
-  if (getValue(req) === token) {
-    next();
+  if (enableCsrfCheck) {
+    let token = req.session.csrfToken;
+    if (!token) {
+      console.error('token not initialized!!');
+      res.sendStatus(500);
+      return;
+    }
+    if (getValue(req) === token) {
+      next();
+    } else {
+      console.info('- sec - CSRF attack');
+      res.status(401).send('Cross site request forbidden');
+    }
   } else {
-    console.info('- sec - CSRF attack');
-    res.status(401).send('Cross site request forbidden');
+    next();
   }
+
 }
 
-function checkCSRFForm(req, res, next) {
+function checkCSRFForm (req, res, next) {
   return checkCSRF(req => req.body && req.body._csrf, req, res, next)
 }
 
-function checkCSRFHeader(req, res, next) {
+function checkCSRFHeader (req, res, next) {
   checkCSRF(req => req.get('X-CSRF-TOKEN'), req, res, next)
 }
 
@@ -278,7 +283,7 @@ const renderHtml = function renderIndexHtml (path, req, res) {
   });
 };
 
-app.get('/', function(req, res) {
+app.get('/', function (req, res) {
   renderHtml('templates/index.html', req, res)
 });
 
@@ -318,6 +323,7 @@ const login = async function login (req, res) {
       return;
     }
 
+    console.log('login_success');
     console.log(user);
     // noinspection JSUnresolvedVariable
     const authInfo = {
