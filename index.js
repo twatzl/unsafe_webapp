@@ -278,7 +278,7 @@ const renderHtml = function renderIndexHtml (path, req, res) {
     }
     htmlHeaders(res, path);
     // this is an extremely simple template engine
-    let rendered = content.toString().replace(/\{\{csrfToken\}\}/g, enableCsrfCheck || req.session.csrfToken);
+    let rendered = content.toString().replace(/\{\{csrfToken\}\}/g, !enableCsrfCheck || req.session.csrfToken);
     return res.send(rendered);
   });
 };
