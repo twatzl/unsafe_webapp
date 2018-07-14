@@ -266,7 +266,7 @@ function isPersonId (input) {
 }
 
 const renderHtml = function renderIndexHtml (path, req, res) {
-  if (!req.session.csrfToken) {
+  if (enableCsrfCheck && !req.session.csrfToken) {
     req.session.csrfToken = uuidv4();
     console.info('created csrfToken ' + req.session.csrfToken);
   }
@@ -278,7 +278,7 @@ const renderHtml = function renderIndexHtml (path, req, res) {
     }
     htmlHeaders(res, path);
     // this is an extremely simple template engine
-    let rendered = content.toString().replace(/\{\{csrfToken\}\}/g, req.session.csrfToken)
+    let rendered = content.toString().replace(/\{\{csrfToken\}\}/g, enableCsrfCheck || req.session.csrfToken);
     return res.send(rendered);
   });
 };
