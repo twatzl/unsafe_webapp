@@ -431,18 +431,20 @@ app.get('/api/countFriends/:id', requireAdmin, async function (req, res) {
 
 app.post('/api/addFriend', requireAuth, checkCSRFHeader, async function (req, res) {
   const ownId = req.session.authInfo.id;
-  let otherId = req.query.otherId;
-  const otherName = req.query.otherName;
+  let otherId = req.body.otherId;
+  const otherName = req.body.otherName;
   try {
     const conn = await db.getConnection();
     if (!otherId) {
       const result = await conn.query('select personId from user where username = ?;', [otherName]);
       console.info('addFriend personId query');
-      console.info(result);
+
       const [[nameQuery]] = result;
       if (nameQuery) {
         otherId = nameQuery.personId;
       } else {
+        console.log("Unknown user " + otherName);
+        console.log(result[0]);
         conn.release();
         res.status(500).send('Unknown user');
         return;
