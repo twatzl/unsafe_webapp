@@ -192,7 +192,7 @@ function htmlHeaders (res, path) {
 
 const app = express();
 
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 app.use(session({
   name: 'safer',
   secret: 'ourReallyNotSoUnsafeApp', // We now have our own secret
@@ -621,6 +621,8 @@ if (process.argv.includes('--resetDB')) {
 } else {
   const server = app.listen(3000, function () {
     console.log('Web server listening on port 3000 with document root ' + baseDir);
+    console.log('CSRF protection: ' + enableCsrfCheck);
+    console.log('Cookie protection: ' + secure);
   });
 
   server.on('close', async () => {
